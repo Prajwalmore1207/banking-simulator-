@@ -1,0 +1,13 @@
+=== USER ACCOUNT SUMMARY REPORT ===
+Generated at: 2025-11-05T11:15:14.476244500
+Total Accounts: 1
+=====================================
+
+Account: ACC1762321202676
+Holder: sanket more
+Balance: $9100.00
+Type: SAVINGS
+Created: 2025-11-05
+---------------------------
+
+TOTAL BALANCE ACROSS ALL ACCOUNTS: $9100.00

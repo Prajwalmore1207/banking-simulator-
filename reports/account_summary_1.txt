@@ -1,0 +1,19 @@
+=== USER ACCOUNT SUMMARY REPORT ===
+Generated at: 2025-11-05T01:43:14.834348300
+Total Accounts: 2
+=====================================
+
+Account: ACC1762286923386
+Holder: Prajwal More
+Balance: $200.00
+Type: SAVINGS
+Created: 2025-11-05
+---------------------------
+Account: ACC1762286950036
+Holder: Prajwal More
+Balance: $100.00
+Type: SAVINGS
+Created: 2025-11-05
+---------------------------
+
+TOTAL BALANCE ACROSS ALL ACCOUNTS: $300.00
