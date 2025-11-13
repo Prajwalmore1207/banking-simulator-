@@ -6,7 +6,7 @@ import com.banking.model.Transaction;
 import com.banking.engine.AccountManager;
 import com.banking.engine.TransactionProcessor;
 import com.banking.service.AuthService;
-import com.banking.service.ReportGenerator;
+import com.banking.engine.ReportGenerator;
 import com.banking.service.AlertService;
 import com.banking.service.BalanceTracker;
 import com.banking.database.DatabaseManager;
@@ -38,8 +38,6 @@ public class BankingSimulator {
 
     private void initializeComponents() {
         logger.info("Initializing Banking Simulator Components...");
-
-        // REMOVED: DatabaseConnection.recreateDatabase(); // No longer needed!
 
         // Test database connection
         if (!DatabaseConnection.testConnection()) {
@@ -87,7 +85,8 @@ public class BankingSimulator {
         System.out.println("\n=== BANKING SIMULATOR ===");
         System.out.println("1. Register");
         System.out.println("2. Login");
-        System.out.println("3. Exit");
+        System.out.println("3. Reset Password");
+        System.out.println("4. Exit");
         System.out.print("Choose an option: ");
 
         try {
@@ -101,6 +100,9 @@ public class BankingSimulator {
                     handleLogin();
                     break;
                 case 3:
+                    handlePasswordReset();
+                    break;
+                case 4:
                     shutdown();
                     return;
                 default:
@@ -125,7 +127,8 @@ public class BankingSimulator {
         System.out.println("6. View Transaction History");
         System.out.println("7. Generate Reports");
         System.out.println("8. Check Balance Alerts");
-        System.out.println("9. Logout");
+        System.out.println("9. Change Password");
+        System.out.println("10. Logout");
         System.out.print("Choose an option: ");
 
         try {
@@ -157,11 +160,15 @@ public class BankingSimulator {
                     handleBalanceAlerts();
                     break;
                 case 9:
+                    handleChangePassword();
+                    break;
+                case 10:
                     handleLogout();
                     break;
                 default:
                     System.out.println("Invalid option. Please try again.");
             }
+
         } catch (NumberFormatException e) {
             System.out.println("Please enter a valid number.");
         } catch (Exception e) {
@@ -174,62 +181,182 @@ public class BankingSimulator {
         System.out.println("\n=== USER REGISTRATION ===");
 
         try {
+            // Get user details directly using Scanner
             System.out.print("Username: ");
-            String username = scanner.nextLine();
+            String username = scanner.nextLine().trim();
+
+            System.out.print("Email: ");
+            String email = scanner.nextLine().trim();
+
+            System.out.print("Full Name: ");
+            String fullName = scanner.nextLine().trim();
+
+            System.out.print("Phone Number: ");
+            String phoneNumber = scanner.nextLine().trim();
 
             System.out.print("Password: ");
             String password = scanner.nextLine();
 
-            System.out.print("Email: ");
-            String email = scanner.nextLine();
+            System.out.print("Confirm Password: ");
+            String confirmPassword = scanner.nextLine();
 
-            System.out.print("Full Name: ");
-            String fullName = scanner.nextLine();
+            // Validate password match
+            if (!password.equals(confirmPassword)) {
+                System.out.println("✗ Error: Passwords do not match!");
+                return;
+            }
 
-            System.out.print("Phone Number: ");
-            String phoneNumber = scanner.nextLine();
+            // Call the registerUser method directly
             User newUser = authService.registerUser(username, password, email, fullName, phoneNumber);
 
             if (newUser != null) {
                 // Send welcome email
                 alertService.sendWelcomeEmail(newUser);
-                System.out.println("Registration successful! Please login to continue.");
-                System.out.println("📧 Welcome email has been sent to: " + email);
+                System.out.println("✓ Registration successful! Please login to continue.");
+                System.out.println("📧 Welcome email has been sent to: " + newUser.getEmail());
             }
 
         } catch (AuthenticationException e) {
-            System.out.println("Registration failed: " + e.getMessage());
+            System.out.println("✗ Registration failed: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("An unexpected error occurred during registration.");
             logger.error("Registration error", e);
         }
     }
+
     private void handleLogin() {
         System.out.println("\n=== USER LOGIN ===");
 
         try {
+            // Get login details directly using Scanner
             System.out.print("Username: ");
-            String username = scanner.nextLine();
+            String username = scanner.nextLine().trim();
 
             System.out.print("Password: ");
             String password = scanner.nextLine();
 
+            // Call the login method directly
             User user = authService.login(username, password);
             this.currentUser = user;
 
             // Update transaction processor with current user ID
             this.transactionProcessor.setCurrentUserId(user.getUserId());
 
-            System.out.println("Login successful! Welcome, " + user.getFullName());
+            System.out.println("✓ Login successful! Welcome, " + user.getFullName());
 
         } catch (AuthenticationException e) {
-            System.out.println("Login failed: " + e.getMessage());
+            System.out.println("✗ Login failed: " + e.getMessage());
         } catch (Exception e) {
             System.out.println("An unexpected error occurred during login.");
             logger.error("Login error", e);
         }
     }
 
+    private void handlePasswordReset() {
+        System.out.println("\n=== PASSWORD RESET ===");
+
+        try {
+            // Get reset details directly using Scanner
+            System.out.print("Username: ");
+            String username = scanner.nextLine().trim();
+
+            System.out.print("Email: ");
+            String email = scanner.nextLine().trim();
+
+            System.out.print("New Password: ");
+            String newPassword = scanner.nextLine();
+
+            System.out.print("Confirm New Password: ");
+            String confirmPassword = scanner.nextLine();
+
+            // Validate password match
+            if (!newPassword.equals(confirmPassword)) {
+                System.out.println("✗ Error: Passwords do not match!");
+                return;
+            }
+
+            // Verify user exists and email matches
+            User user = databaseManager.getUserByUsername(username);
+            if (user == null || !user.getEmail().equalsIgnoreCase(email)) {
+                System.out.println("✗ Error: Invalid username or email!");
+                return;
+            }
+
+            // Hash new password
+            String newHashedPassword = com.banking.util.PasswordUtil.hashPassword(newPassword);
+
+            // Update password in database
+            boolean success = databaseManager.updatePassword(user.getUserId(), newHashedPassword);
+
+            if (success) {
+                System.out.println("✓ Password reset successfully! You can now login with your new password.");
+                logger.info("Password reset for user: {}", username);
+            } else {
+                System.out.println("✗ Failed to reset password!");
+                logger.error("Password reset failed for user: {}", username);
+            }
+
+        } catch (Exception e) {
+            System.out.println("An unexpected error occurred during password reset.");
+            logger.error("Password reset error", e);
+        }
+    }
+
+    private void handleChangePassword() {
+        System.out.println("\n=== CHANGE PASSWORD ===");
+
+        try {
+            // Get password change details directly using Scanner
+            System.out.print("Current Password: ");
+            String currentPassword = scanner.nextLine();
+
+            System.out.print("New Password: ");
+            String newPassword = scanner.nextLine();
+
+            System.out.print("Confirm New Password: ");
+            String confirmPassword = scanner.nextLine();
+
+            // Validate password match
+            if (!newPassword.equals(confirmPassword)) {
+                System.out.println("✗ Error: New passwords do not match!");
+                return;
+            }
+
+            // Verify current password
+            if (!com.banking.util.PasswordUtil.verifyPassword(currentPassword, currentUser.getPasswordHash())) {
+                System.out.println("✗ Error: Current password is incorrect!");
+                return;
+            }
+
+            // Validate password strength
+            if (!com.banking.util.PasswordUtil.isStrongPassword(newPassword)) {
+                System.out.println("✗ Error: New password does not meet strength requirements!");
+                return;
+            }
+
+            // Hash new password
+            String newHashedPassword = com.banking.util.PasswordUtil.hashPassword(newPassword);
+
+            // Update password in database
+            boolean success = databaseManager.updatePassword(currentUser.getUserId(), newHashedPassword);
+
+            if (success) {
+                // Update current user object
+                currentUser.setPasswordHash(newHashedPassword);
+                System.out.println("✓ Password changed successfully!");
+                logger.info("Password changed for user: {}", currentUser.getUsername());
+            } else {
+                System.out.println("✗ Failed to change password!");
+                logger.error("Password change failed for user: {}", currentUser.getUsername());
+            }
+
+        } catch (Exception e) {
+            System.out.println("Error changing password: " + e.getMessage());
+            logger.error("Password change error for user {}: {}", currentUser.getUsername(), e.getMessage(), e);
+        }
+    }
+
+    // Rest of your methods remain unchanged...
     private void handleCreateAccount() {
         System.out.println("\n=== CREATE ACCOUNT ===");
 
@@ -248,6 +375,7 @@ public class BankingSimulator {
             if (!accountType.equals("SAVINGS") && !accountType.equals("CURRENT")) {
                 System.out.println("Invalid account type. Using SAVINGS as default.");
                 accountType = "SAVINGS";
+
             }
 
             // Generate account number
@@ -261,8 +389,6 @@ public class BankingSimulator {
 
             // Check initial balance
             balanceTracker.checkNewAccountBalance(account, currentUser);
-
-            System.out.println("Account created successfully!");
 
             System.out.println("Account created successfully!");
             System.out.println("Your account number: " + accountNumber);
@@ -481,13 +607,11 @@ public class BankingSimulator {
 
     private void handleBalanceAlerts() {
         System.out.println("\n=== BALANCE ALERTS ===");
-
         try {
             balanceTracker.monitorUserAccounts(currentUser.getUserId(), currentUser);
             balanceTracker.generateBalanceReport(currentUser.getUserId());
 
             System.out.println("Balance check completed. Check application logs for details.");
-
         } catch (Exception e) {
             System.out.println("An error occurred during balance check.");
             logger.error("Balance alert error", e);

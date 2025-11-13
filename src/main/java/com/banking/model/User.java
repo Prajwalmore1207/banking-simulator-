@@ -26,14 +26,23 @@ public class User {
     // Getters and Setters
     public int getUserId() { return userId; }
     public void setUserId(int userId) { this.userId = userId; }
+
     public String getUsername() { return username; }
+
     public String getPasswordHash() { return passwordHash; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; } // ADD THIS METHOD
+
     public String getEmail() { return email; }
+
     public String getFullName() { return fullName; }
+
     public String getPhoneNumber() { return phoneNumber; }
+
     public LocalDateTime getCreatedDate() { return createdDate; }
+
     public LocalDateTime getLastLogin() { return lastLogin; }
     public void setLastLogin(LocalDateTime lastLogin) { this.lastLogin = lastLogin; }
+
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
 

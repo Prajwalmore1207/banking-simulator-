@@ -1,1 +1,29 @@
+# Java
+target/
+*.class
+*.jar
+
+# IntelliJ
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Database
+database/
+*.db
+
+# Logs
 logs/
+*.log
+
+# Reports
+reports/
+
+# Email config (private)
+src/main/resources/email.properties
+
+# Windows
+Thumbs.db
+Desktop.ini

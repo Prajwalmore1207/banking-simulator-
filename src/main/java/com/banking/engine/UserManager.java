@@ -4,7 +4,6 @@ import com.banking.model.User;
 import com.banking.database.DatabaseManager;
 import com.banking.util.LoggerUtil;
 import org.apache.logging.log4j.Logger;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,7 +17,6 @@ public class UserManager {
         this.activeUsers = new HashMap<>();
         logger.info("UserManager initialized successfully");
     }
-
     public boolean registerUser(User user) {
         try {
             if (databaseManager.getUserByUsername(user.getUsername()) != null) {
@@ -51,18 +49,15 @@ public class UserManager {
         }
         return null;
     }
-
     public void logoutUser(String username) {
         if (activeUsers.containsKey(username)) {
             activeUsers.remove(username);
             logger.info("User logged out: {}", username);
         }
     }
-
     public boolean isUserActive(String username) {
         return activeUsers.containsKey(username);
     }
-
     public User getActiveUser(String username) {
         return activeUsers.get(username);
     }

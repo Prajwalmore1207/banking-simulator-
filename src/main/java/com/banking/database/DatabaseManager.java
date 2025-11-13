@@ -224,7 +224,6 @@ public class DatabaseManager {
             pstmt.setString(1, accountNumber);
             pstmt.setString(2, accountNumber);
             ResultSet rs = pstmt.executeQuery();
-
             while (rs.next()) {
                 Transaction transaction = new Transaction(
                         rs.getString("transaction_id"),
@@ -244,4 +243,266 @@ public class DatabaseManager {
         }
         return transactions;
     }
+
+    // ===== PASSWORD MANAGEMENT METHODS =====
+
+    /**
+     * Update user password
+     */
+    public boolean updatePassword(int userId, String newPasswordHash) {
+        String sql = "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newPasswordHash);
+            pstmt.setInt(2, userId);
+
+            int rowsAffected = pstmt.executeUpdate();
+            boolean success = rowsAffected > 0;
+
+            if (success) {
+                logger.info("Password updated successfully for user ID: {}", userId);
+            } else {
+                logger.warn("No user found with ID: {} for password update", userId);
+            }
+
+            return success;
+
+        } catch (SQLException e) {
+            logger.error("Error updating password for user ID {}: {}", userId, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Update password by username (for password reset)
+     */
+    public boolean updatePasswordByUsername(String username, String newPasswordHash) {
+        String sql = "UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE username = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newPasswordHash);
+            pstmt.setString(2, username);
+
+            int rowsAffected = pstmt.executeUpdate();
+            boolean success = rowsAffected > 0;
+
+            if (success) {
+                logger.info("Password updated successfully for username: {}", username);
+            } else {
+                logger.warn("No user found with username: {} for password update", username);
+            }
+
+            return success;
+
+        } catch (SQLException e) {
+            logger.error("Error updating password for username {}: {}", username, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get password hash for a user
+     */
+    public String getPasswordHash(int userId) {
+        String sql = "SELECT password_hash FROM users WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("password_hash");
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error getting password hash for user ID {}: {}", userId, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Get password hash by username
+     */
+    public String getPasswordHashByUsername(String username) {
+        String sql = "SELECT password_hash FROM users WHERE username = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("password_hash");
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error getting password hash for username {}: {}", username, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if username exists
+     */
+    public boolean userExists(String username) {
+        String sql = "SELECT COUNT(*) FROM users WHERE username = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error checking if username exists {}: {}", username, e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if email exists
+     */
+    public boolean emailExists(String email) {
+        String sql = "SELECT COUNT(*) FROM users WHERE email = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, email);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error checking if email exists {}: {}", email, e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Verify user credentials for password reset
+     */
+    public boolean verifyUserCredentials(String username, String email) {
+        String sql = "SELECT COUNT(*) FROM users WHERE username = ? AND email = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            pstmt.setString(2, email);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error verifying user credentials for {}: {}", username, e.getMessage());
+        }
+
+        return false;
+    }
+
+    /**
+     * Get user ID by username
+     */
+    public Integer getUserIdByUsername(String username) {
+        String sql = "SELECT user_id FROM users WHERE username = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, username);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("user_id");
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error getting user ID for username {}: {}", username, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Get username by user ID
+     */
+    public String getUsernameById(int userId) {
+        String sql = "SELECT username FROM users WHERE user_id = ?";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("username");
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error getting username for user ID {}: {}", userId, e.getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Get user by user ID
+     */
+    public User getUserById(int userId) {
+        String sql = "SELECT * FROM users WHERE user_id = ? AND is_active = 1";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, userId);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                User user = new User(
+                        rs.getString("username"),
+                        rs.getString("password_hash"),
+                        rs.getString("email"),
+                        rs.getString("full_name"),
+                        rs.getString("phone_number")
+                );
+                user.setUserId(rs.getInt("user_id"));
+                user.setLastLogin(rs.getTimestamp("last_login") != null ?
+                        rs.getTimestamp("last_login").toLocalDateTime() : null);
+                user.setActive(rs.getBoolean("is_active"));
+
+                logger.debug("User retrieved by ID: {}", userId);
+                return user;
+            }
+        } catch (SQLException e) {
+            logger.error("Failed to get user by ID: {}", userId, e);
+        }
+        return null;
+    }
+
+    /**
+     * Save user (alternative to createUser for updates)
+     * REMOVED the problematic saveUser method to avoid circular reference
+     */
+    // Remove the saveUser method that was causing the circular reference
 }
